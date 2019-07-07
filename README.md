@@ -1,14 +1,18 @@
 # Query Large table in Go
 
+
 > Take home message1: Query DB by bucket and use go routine to parallel them.
+
 > Take home message2: All code is on [Adoni/golang-query-large-table · GitHub](https://github.com/Adoni/golang-query-large-table)
 
 Sometimes we need to load data from database. Say there are 1 million records and we want to load all their object id into memory. What could we do? To make things clear, we assume the table structure is so simple that it only contains one column called object id.
 
 A snapshot of the table is
-[image:44F58021-38D6-487B-BEB6-63FA5E353F2F-3204-00007A3BBFC79E2A/D7497C06-01D9-42C7-98FC-A1F227596284.png]
+
+![table snapshot](table_snapshot.png "Table Snapshot")
 
 And the definition of table ORM is:
+
 ```go
 type Record struct {
     gorm.Model
@@ -19,6 +23,7 @@ type Record struct {
 > Don’t know ORM (Object Relational Mapping)? Please visit [stack overflow](https://stackoverflow.com/questions/1279613/what-is-an-orm-how-does-it-work-and-how-should-i-use-one), [wiki](https://en.wikipedia.org/wiki/Object-relational_mapping) and [gorm guides.](https://gorm.io/docs/)
 
 And a helper function is constructed to measure how much time a function takes to finish:
+
 ```go
 func timeTrack(start time.Time, name string) {
     elapsed := time.Since(start)
@@ -27,6 +32,7 @@ func timeTrack(start time.Time, name string) {
 ```
 
 ## Method 1: Just do ordinary query and leave everything to mysql and go
+
 Yes, we can do that, which is very straightforward and the code is simple:
 
 ```go
@@ -38,11 +44,13 @@ func method1(db *gorm.DB) {
 ```
 
 The output is 
+
 ```
 Method 1 tooks 5.753609157s
 ```
 
 Obviously, it can cost substantial time to load all records. To make it worse, what we can do before result comes out is just waiting or having a cup of coffee.
+
 ## Method 2: Divide table into buckets and query them one by one
 
 Method 1 cannot show any query process, which would make some programmer, like me, crazy. To show how much information we’ve processed so far, we can chunk the entire ids into sequential buckets or batches, and then query them one by one. Like that:
@@ -109,6 +117,7 @@ func method3(db *gorm.DB) {
 ```
 
 The output is 
+
 ```
 0 of 10
 1 of 10
@@ -126,5 +135,4 @@ Method 3 tooks 1.386305598s
 We can find method 3 is *4 times faster* than method 1.
 
 During the code running, I’m watching the CPU status. And only method 3 makes CPU work at fully capacity, which makes me believe that that’s the best I can do for now.
-
 
